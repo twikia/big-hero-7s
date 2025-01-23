@@ -72,13 +72,16 @@ def check_light_sensor(lsValues):
 
 #turn a certain amount of degrees to the right or clockwise
 def turn_robot_degrees(deg: int):
+    global leftMotor, rightMotor
     radians = (deg / 360) * turning_radians
     leftMotor.setPosition(radians)
     rightMotor.setPosition(-radians)
     #sleep until it finishes     IMPORTANT TO IMPLEMENT ############################
 
 #take in a state and return the robot movement
-def setSpeeds(state, psValues):
+def setSpeeds(psValues):
+    global state
+    
     match state:
         case 0:
             if psValues[left sensor] > distance_to_wall:
@@ -141,7 +144,7 @@ while robot.step(TIME_STEP) != -1:
         # rightSpeed = 0.5 * MAX_SPEED
     # elif front_obstacle:
     
-    leftSpeed, rightSpeed = setSpeeds(state, psValues)
+    leftSpeed, rightSpeed = setSpeeds(psValues)
     
     # write actuators inputs
     leftMotor.setVelocity(leftSpeed)
