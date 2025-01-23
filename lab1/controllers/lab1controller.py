@@ -72,7 +72,7 @@ def check_light_sensor(lsValues):
 
 #turn a certain amount of degrees to the right or clockwise
 def turn_robot_degrees(deg: int):
-    global leftMotor, rightMotor
+    global leftMotor, rightMotor, turning_radians
     radians = (deg / 360) * turning_radians
     leftMotor.setPosition(radians)
     rightMotor.setPosition(-radians)
@@ -80,7 +80,7 @@ def turn_robot_degrees(deg: int):
 
 #take in a state and return the robot movement
 def setSpeeds(psValues):
-    global state
+    global state, foward_speed_mult, MAX_SPEED, wall_correction_amount
     
     match state:
         case 0:
