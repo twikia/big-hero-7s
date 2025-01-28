@@ -36,21 +36,21 @@ right_motor.setPosition(float('inf'))
 left_motor.setVelocity(0.0)
 right_motor.setVelocity(0.0)
 
+# states
 FOLLOW_WALL_LEFT = 0
 TURN_RIGHT_1 = 1
 TURN_LEFT_1 = 2
 FOLLOW_WALL_RIGHT = 3
 TURN_AROUND = 4
 STOP = 5
-
-# RIGHT_TURN = 6
 FULL_TURN = 6
 TURN_RIGHT_2 = 7
 TURN_LEFT_2 = 8
 
+#initializing our state to follow follow the left wall
 state = FOLLOW_WALL_LEFT
+
 # Main loop:
-# - perform simulation steps until Webots is stopping the controller
 while robot.step(TIME_STEP) != -1:
     
     ps_values = []
@@ -58,31 +58,16 @@ while robot.step(TIME_STEP) != -1:
     for i in range(8):
         ps_values.append(ps[i].getValue())
         ls_values.append(ls[i].getValue())
-    #print("light sensor: ",ls_values)
-    print("distance sensors: ", ps_values)
-    print("LIGHT SENSORS: ", ls_values)
-    # top_left = 
-    
-    #used to keep left while turning
-    # stay_left = ps_values[5] >100.0 #or ps_values[2] <80
-    
-    #used for epuck to advance forward
-    left_obstacle =  ps_values[5] > 80.0 or ps_values[6] >80.0 #or ps_values[7] > 70.0
-    # left_obstacle = ps_values[5] > 80.0
-    right_obstacle = ps_values[2] > 80.0 or ps_values[1] > 80.0 #ps_values[1] > 80.0 or 
-    front_obstacle = ps_values[7] > 80.0 or ps_values[0] > 80.0 #or ps_values[6] >60.0
 
+    # triggers for state switches
+    left_obstacle =  ps_values[5] > 80.0 or ps_values[6] >80.0
+    right_obstacle = ps_values[2] > 80.0 or ps_values[1] > 80.0
+    front_obstacle = ps_values[7] > 80.0 or ps_values[0] > 80.0
     light_sensed = ls_values[0] == 0 and  ls_values[1] == 0 and ls_values[2] == 0 and ls_values[5] == 0 and ls_values[6] == 0 and ls_values[7] == 0
    
     left_speed = 0.5 * MAX_SPEED
     right_speed = 0.5 * MAX_SPEED
-    if state == FOLLOW_WALL_LEFT: 
-        # if right_obstacle:
-            # obstacle in front, turn right
-            # state = TURN_LEFT
-        # elif front_obstacle and left_obstacle:
-           # state = RIGHT_TURN 
-       
+    if state == FOLLOW_WALL_LEFT:
         if front_obstacle:
             state = TURN_RIGHT_1
 
@@ -91,15 +76,11 @@ while robot.step(TIME_STEP) != -1:
 
         if light_sensed:
             state = FULL_TURN
-        # elif stay_left:
-            #  state = TURN_LEFT
             
     elif state == TURN_RIGHT_1:
          left_speed = 0.5 * MAX_SPEED
          right_speed = -0.5 * MAX_SPEED
          
-        #  if left_obstacle:
-            #  state = FOLLOW_WALL_LEFT
          if not front_obstacle:
             state = FOLLOW_WALL_LEFT
 
@@ -148,21 +129,6 @@ while robot.step(TIME_STEP) != -1:
         if left_obstacle and not front_obstacle:
             right_speed = 0
             left_speed = 0
-        
-    # elif state == RIGHT_TURN:
-         # left_speed = 0
-         # right_speed = 0
-         # radians = (200 / 360) 
-         # right_motor.setPosition(radians)
-         # #_motor.setPosition(-radians)
-         
-         # if stay_left:
-             # state = FOLLOW_WALL_LEFT
-       
-     # elif state == T
-    print("state: ", state)
-    print("front_ob bool:", front_obstacle)
-    print("left_ob bool:", left_obstacle)
-    print("right_ob bool:", right_obstacle)    
+           
     left_motor.setVelocity(left_speed)
     right_motor.setVelocity(right_speed)
