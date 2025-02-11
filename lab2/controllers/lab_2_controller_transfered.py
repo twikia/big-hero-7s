@@ -13,7 +13,7 @@ GROUND_SENSOR_THRESHOLD = 0
 # These are your pose values that you will update by solving the odometry equations
 pose_x = 0
 pose_y = 0
-pose_theta = -90
+pose_theta = 0
 
 # Index into ground_sensors and ground_sensor_readings for each of the 3 onboard sensors.
 LEFT_IDX = 0
