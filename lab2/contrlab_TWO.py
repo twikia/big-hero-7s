@@ -3,7 +3,6 @@
 # You may need to import some classes of the controller module.
 import math
 from controller import Robot, Motor, DistanceSensor
-# import os
 
 # Ground Sensor Measurements under this threshold are black
 # measurements above this threshold can be considered white.
@@ -73,6 +72,7 @@ def update_odometry():
     pose_y += math.sin(pose_theta) * ((left_normalized_speed + right_normalized_speed) / 2) * delta_time
     
     prev_elapsed_time = elapsed_time
+    
 # Main Control Loop:
 while robot.step(SIM_TIMESTEP) != -1:
         
@@ -160,16 +160,9 @@ while robot.step(SIM_TIMESTEP) != -1:
     # for best results
 
     
-    # if(pose_theta < 6.35 and pose_x <-.02 and pose_y < -.005):
-    #     pose_x = 0
-    #     pose_y = 0
-    #     pose_theta = 0
-
-    
     # check if it has reached the start line again
     if center_sensor and left_sensor and right_sensor:
         sensor_time_elapsed += SIM_TIMESTEP / 1000.0
-        # if sensor_time_elapsed >= .3 and pose_theta > 340:
         if sensor_time_elapsed >= .1:
             pose_x = 0
             pose_y = 0
