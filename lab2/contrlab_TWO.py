@@ -94,20 +94,7 @@ while robot.step(SIM_TIMESTEP) != -1:
     elif state == 'line_follower':
     
         leftMax = leftMotor.getMaxVelocity()
-        rightMax = rightMotor.getMaxVelocity() 
-
-        # check if it has reached the start line again
-        # if center_sensor and left_sensor and right_sensor:
-            # sensor_time_elapsed += SIM_TIMESTEP / 1000.0
-            # if sensor_time_elapsed >= .3 and pose_theta > 340:
-            # if sensor_time_elapsed >= .1:
-                # pose_x = 0
-                # pose_y = 0
-                #pose_theta = -90
-                # pose_theta = 0
-        # else:
-            # sensor_time_elapsed  = 0
-            
+        rightMax = rightMotor.getMaxVelocity()             
  
         if center_sensor: #go straight
             vL = leftMax
@@ -171,10 +158,24 @@ while robot.step(SIM_TIMESTEP) != -1:
     #
     # 2) Use the pose when you encounter the line last 
     # for best results
-    if(pose_theta < 6.35 and pose_x <-.02 and pose_y < -.005):
-        pose_x = 0
-        pose_y = 0
-        pose_theta = 0
+
+    
+    # if(pose_theta < 6.35 and pose_x <-.02 and pose_y < -.005):
+    #     pose_x = 0
+    #     pose_y = 0
+    #     pose_theta = 0
+
+    
+    # check if it has reached the start line again
+    if center_sensor and left_sensor and right_sensor:
+        sensor_time_elapsed += SIM_TIMESTEP / 1000.0
+        # if sensor_time_elapsed >= .3 and pose_theta > 340:
+        if sensor_time_elapsed >= .1:
+            pose_x = 0
+            pose_y = 0
+            pose_theta = 0
+    else:
+        sensor_time_elapsed  = 0
     
     print("Current pose: [%5f, %5f, %5f]" % (pose_x, pose_y, pose_theta))
     leftMotor.setVelocity(vL)
