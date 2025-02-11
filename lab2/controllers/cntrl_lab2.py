@@ -54,20 +54,25 @@ for i in range(10): robot.step(SIM_TIMESTEP)
 
 vL = 0 # TODO: Initialize variable for left speed
 vR = 0 # TODO: Initialize variable for right speed
-
+elapsed_time = 0 
+prev_elapsed_time = 0
+sensor_time_elapsed = 0
 
 # Main Control Loop:
 while robot.step(SIM_TIMESTEP) != -1:
     
+    # elapsed_time += SIM_TIMESTEP / 1000.0
+        
     center_sensor = gsr[1] < 800
     left_sensor = gsr[0] < 800
     right_sensor = gsr[2] < 800
+    
     # Read ground sensor values
-    print('-------------------')
+    # print('-------------------')
     for i, gs in enumerate(ground_sensors):
         gsr[i] = gs.getValue()
-        print("sensor: ",i, " ",gsr[i])
-    print('-------------------')
+        # print("sensor: ",i, " ",gsr[i])
+    # print('-------------------')
     
     if state == 'speed_measurement':
         print(robot.getTime())
@@ -78,21 +83,49 @@ while robot.step(SIM_TIMESTEP) != -1:
         vR = MAX_SPEED
     elif state == 'line_follower':
         leftMax = leftMotor.getMaxVelocity()
-        rightMax = rightMotor.getMaxVelocity()
+        rightMax = rightMotor.getMaxVelocity() 
+
         
-        if center_sensor: #go straight
-            vL = leftMax
-            vR = rightMax
-        elif left_sensor:#move counterclockwise in place
-            vL = -leftMax
-            vR = rightMax
-        elif right_sensor:
-            vL = leftMax
-            vR = -rightMax
+        # check if it has reached the start line again
+        if center_sensor and left_sensor and right_sensor:
+            sensor_time_elapsed += SIM_TIMESTEP / 1000.0
+            # if sensor_time_elapsed >= .3 and pose_theta > 340:
+            if sensor_time_elapsed >= .1:
+                pose_x = 0
+                pose_y = 0
+                # pose_theta = -90
+                pose_theta = 0
         else:
-            vL = -leftMax
-            vR = rightMax
-        
+            sensor_time_elapsed  =0
+            
+ 
+        if center_sensor: #go straight
+            # vL = leftMax
+            # vR = rightMax
+            vL = leftMax*0.25
+            vR = rightMax*0.25
+        # elif center_sensor and left_sensor:
+        #     vL = -leftMax * .8
+        #     vR = rightMax
+        elif left_sensor:#move counterclockwise in place
+            # vL = -leftMax
+            # vR = rightMax
+            vL = -leftMax*0.25
+            vR = rightMax*0.25
+        # elif center_sensor and right_sensor:
+        #     vL = leftMax 
+        #     vR = -rightMax * .8
+        elif right_sensor:
+            # vL = leftMax
+            # vR = -rightMax
+            vL = leftMax*0.25
+            vR = -rightMax*0.25
+        else:
+            # vL = -leftMax
+            # vR = rightMax
+            vL = -leftMax*0.25
+            vR = rightMax*0.25
+            
     #print(gsr) # TODO: Uncomment to see the ground sensor values!
 
         
@@ -114,6 +147,20 @@ while robot.step(SIM_TIMESTEP) != -1:
     # TODO: Insert Line Following Code Here  
     
     # TODO: Call update_odometry Here
+    
+    elapsed_time += SIM_TIMESTEP/1000.0
+    delta_time = elapsed_time-prev_elapsed_time
+    
+    right_normalized_speed = (vR/MAX_SPEED)*EPUCK_MAX_WHEEL_SPEED
+    left_normalized_speed = (vL/MAX_SPEED)*EPUCK_MAX_WHEEL_SPEED
+
+    pose_theta += ((right_normalized_speed - left_normalized_speed)/EPUCK_AXLE_DIAMETER) * delta_time
+    
+    prev_elapsed_time = elapsed_time
+    
+    pose_x += math.cos(pose_theta)*((left_normalized_speed + right_normalized_speed)/2) * delta_time
+    
+    pose_y += math.sin(pose_theta)*((left_normalized_speed + right_normalized_speed)/2) * delta_time
     
     # Hints:
     #
@@ -141,6 +188,6 @@ while robot.step(SIM_TIMESTEP) != -1:
     # for best results
     
     
-    #print("Current pose: [%5f, %5f, %5f]" % (pose_x, pose_y, pose_theta))
+    print("Current pose: [%5f, %5f, %5f]" % (pose_x, pose_y, pose_theta))
     leftMotor.setVelocity(vL)
     rightMotor.setVelocity(vR)
