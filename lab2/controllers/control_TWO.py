@@ -99,11 +99,11 @@ while robot.step(SIM_TIMESTEP) != -1:
             vR = rightMax
        
         elif left_sensor:#move counterclockwise in place
-            vL = -leftMax*0.15
-            vR = rightMax*0.2
+            vL = -leftMax*0.25
+            vR = rightMax*0.25
         elif right_sensor:
-            vL = leftMax*0.2
-            vR = -rightMax*0.15
+            vL = leftMax*0.25
+            vR = -rightMax*0.25
         else:
             vL = -leftMax
             vR = rightMax
