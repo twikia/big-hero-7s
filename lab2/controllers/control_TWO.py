@@ -87,7 +87,6 @@ while robot.step(SIM_TIMESTEP) != -1:
     if state == 'speed_measurement':
        if start_line:
             state = 'line_follower'
-        
         vL = MAX_SPEED
         vR = MAX_SPEED
     elif state == 'line_follower':
