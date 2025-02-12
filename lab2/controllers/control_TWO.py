@@ -3,7 +3,6 @@
 # You may need to import some classes of the controller module.
 import math
 from controller import Robot, Motor, DistanceSensor
-# import os
 
 # Ground Sensor Measurements under this threshold are black
 # measurements above this threshold can be considered white.
@@ -33,7 +32,7 @@ SIM_TIMESTEP = int(robot.getBasicTimeStep())
 
 
 #state
-state = 'line_follower'
+state = 'speed_measurement'
 
 # Initialize Motors
 leftMotor = robot.getDevice('left wheel motor')
@@ -73,58 +72,45 @@ def update_odometry():
     pose_y += math.sin(pose_theta) * ((left_normalized_speed + right_normalized_speed) / 2) * delta_time
     
     prev_elapsed_time = elapsed_time
+    
 # Main Control Loop:
 while robot.step(SIM_TIMESTEP) != -1:
-        
     center_sensor = gsr[1] < 800
     left_sensor = gsr[0] < 800
     right_sensor = gsr[2] < 800
-    
     for i, gs in enumerate(ground_sensors):
         gsr[i] = gs.getValue()
         
+    start_line = center_sensor and left_sensor and right_sensor
+  
     
     if state == 'speed_measurement':
-        print(robot.getTime())
-        
-        if robot.getTime() == 5.12:
+       if start_line:
             state = 'line_follower'
+        
         vL = MAX_SPEED
         vR = MAX_SPEED
     elif state == 'line_follower':
     
         leftMax = leftMotor.getMaxVelocity()
-        rightMax = rightMotor.getMaxVelocity() 
-
-        # check if it has reached the start line again
-        # if center_sensor and left_sensor and right_sensor:
-            # sensor_time_elapsed += SIM_TIMESTEP / 1000.0
-            # if sensor_time_elapsed >= .3 and pose_theta > 340:
-            # if sensor_time_elapsed >= .1:
-                # pose_x = 0
-                # pose_y = 0
-                #pose_theta = -90
-                # pose_theta = 0
-        # else:
-            # sensor_time_elapsed  = 0
-            
+        rightMax = rightMotor.getMaxVelocity()             
  
         if center_sensor: #go straight
             vL = leftMax
             vR = rightMax
        
         elif left_sensor:#move counterclockwise in place
-            vL = -leftMax*0.25
-            vR = rightMax*0.25
+            vL = -leftMax*0.15
+            vR = rightMax*0.2
         elif right_sensor:
-            vL = leftMax*0.25
-            vR = -rightMax*0.25
+            vL = leftMax*0.2
+            vR = -rightMax*0.15
         else:
-            vL = -leftMax*0.25
-            vR = rightMax*0.25
+            vL = -leftMax
+            vR = rightMax
         
         update_odometry()
-            
+          
     #print(gsr) # TODO: Uncomment to see the ground sensor values!
 
         
@@ -171,10 +157,19 @@ while robot.step(SIM_TIMESTEP) != -1:
     #
     # 2) Use the pose when you encounter the line last 
     # for best results
-    if(pose_theta > 6.35 and pose_x <-.02 and pose_y < -.005):
-        pose_x = 0
-        pose_y = 0
-        pose_theta = 0
+
+    
+    # check if it has reached the start line again
+    
+    if start_line:
+        print(start_line)
+        sensor_time_elapsed += SIM_TIMESTEP / 1000.0
+        if sensor_time_elapsed >= .1:
+            pose_x = 0
+            pose_y = 0
+            pose_theta = 0
+    else:
+        sensor_time_elapsed  = 0
     
     print("Current pose: [%5f, %5f, %5f]" % (pose_x, pose_y, pose_theta))
     leftMotor.setVelocity(vL)
