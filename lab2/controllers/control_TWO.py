@@ -97,32 +97,19 @@ while robot.step(SIM_TIMESTEP) != -1:
         leftMax = leftMotor.getMaxVelocity()
         rightMax = rightMotor.getMaxVelocity() 
 
-        # check if it has reached the start line again
-        # if center_sensor and left_sensor and right_sensor:
-            # sensor_time_elapsed += SIM_TIMESTEP / 1000.0
-            # if sensor_time_elapsed >= .3 and pose_theta > 340:
-            # if sensor_time_elapsed >= .1:
-                # pose_x = 0
-                # pose_y = 0
-                #pose_theta = -90
-                # pose_theta = 0
-        # else:
-            # sensor_time_elapsed  = 0
-            
- 
         if center_sensor: #go straight
-            vL = leftMax
-            vR = rightMax
+            vL = leftMax*.25
+            vR = rightMax*.25
        
         elif left_sensor:#move counterclockwise in place
-            vL = -leftMax*0.25
-            vR = rightMax*0.25
+            vL = -leftMax*0.15
+            vR = rightMax*0.2
         elif right_sensor:
-            vL = leftMax*0.25
-            vR = -rightMax*0.25
+            vL = leftMax*0.2
+            vR = -rightMax*0.15
         else:
-            vL = -leftMax*0.25
-            vR = rightMax*0.25
+            vL = -leftMax*0.15
+            vR = rightMax*0.2
         
         update_odometry()
   
