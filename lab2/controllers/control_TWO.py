@@ -83,9 +83,6 @@ while robot.step(SIM_TIMESTEP) != -1:
     start_line = center_sensor and left_sensor and right_sensor
     
     if state == 'speed_measurement':
-               
-        # if robot.getTime() == 5.12:
-            # state = 'line_follower'
         if start_line:
             state = 'line_follower'
            
