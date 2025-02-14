@@ -69,10 +69,23 @@ index = 0
 # our state variables / other random stuff we might need
 state = 0
 is_proportional_controller = True
-is_proportional_feedback_controller_state = True
+is_proportional_feedback_controller_state = False
+elapsed_time = 0 
 
 
-def reach_position(distance_to_goal, is_proportional=True) -> bool:
+def inverse_wheel_kinematics(distance, delta_theta, delta_time=SIM_TIMESTEP / 1000.0, axle_diameter=EPUCK_AXLE_DIAMETER):
+    """takes in the amount to travel then gives the rotations we need"""
+    if delta_time == 0: return 0, 0
+    
+    # reversed the equations we had from last lab 2 for odometry
+    v_linear = distance / delta_time  
+    vR = (delta_theta * axle_diameter) / (2 * delta_time) + v_linear
+    vL = v_linear - (delta_theta * axle_diameter) / (2 * delta_time)
+    return vL, vR
+
+    
+
+def reach_position(distance_to_goal, is_proportional=True) -> tuple:
     """goes foward until the distance is within the error -> ruturns true is it has reached the goal"""
     global leftMotor, rightMotor, leftMax, rightMax
     
@@ -93,13 +106,12 @@ def reach_position(distance_to_goal, is_proportional=True) -> bool:
         foward_speed = min_foward_speed
         
     if not (distance_to_goal < err_margin and distance_to_goal > -err_margin):
-        leftMotor.setVelocity(leftMax * foward_speed)
-        rightMotor.setVelocity(rightMax * foward_speed)
-        return False
-    return True
+        return (leftMax * foward_speed, rightMax * foward_speed)
+
+    return None
 
 
-def turn_to_goal(ang_to_goal: float, is_proportional=True) -> bool:
+def turn_to_goal(ang_to_goal: float, is_proportional=True) -> tuple:
     """ takes in the angle and turns if not facing -> returns true if it is facing the goal otherwise returns false"""
     
     global leftMotor, rightMotor, leftMax, rightMax
@@ -124,14 +136,10 @@ def turn_to_goal(ang_to_goal: float, is_proportional=True) -> bool:
     
     if not (ang_to_goal < err_margin and ang_to_goal > -err_margin):
         if ang_to_goal > 0:
-            leftMotor.setVelocity(-leftMax * turn_speed)
-            rightMotor.setVelocity(rightMax * turn_speed)
-        else: 
-            leftMotor.setVelocity(leftMax * turn_speed)
-            rightMotor.setVelocity(-rightMax * turn_speed)
-        return False
+            return (-leftMax * turn_speed, rightMax * turn_speed)
+        return (leftMax * turn_speed, -rightMax * turn_speed)
         
-    return True
+    return None
 
 
 # Main Control Loop:
@@ -173,20 +181,19 @@ def main():
         #     vR = rightMax*0.25
         ############################################# end prev code ########################
         
-        
         # Set the position of the marker
         # marker.setSFVec3f([waypoints[index][0], waypoints[index][1], 0.01])
-        
-        # Read ground sensor values
-        for i, gs in enumerate(ground_sensors):
-            gsr[i] = gs.getValue()
 
         # Read pose_x, pose_y, pose_theta from gps and compass
         pose_x = gps.getValues()[0]
         pose_y = gps.getValues()[1]
         pose_theta = np.arctan2(compass.getValues()[0], compass.getValues()[1])
         
-        # TODO: controller
+        # get the times:
+        elapsed_time += SIM_TIMESTEP / 1000.0
+        delta_time = SIM_TIMESTEP / 1000.0
+        
+        # TODO: controller / calculations
         
         # euclidian distance
         goal_pos = (-0.19, 0.125162, 0)
@@ -225,25 +232,62 @@ def main():
         #         leftMotor.setVelocity(0)
         #         rightMotor.setVelocity(0)
         
+        
         # idk if we need two states but i am just toggling using a bool:
         # more the robot depending on states
         if is_proportional_feedback_controller_state:
-            pass
+            
+            # tuning vars:
+            forward_err = .01
+            rot_err = .01
+            forward_gain = 5
+            rot_gain = .1
+            
+            
+            R_dis, L_dis = inverse_wheel_kinematics(euc_dis, ang_to_goal)
+            wheel_rot = R_dis - L_dis # right wheel minus left gives positive theta rot
+            
+            if not (wheel_rot < rot_err and wheel_rot > -rot_err):
+                if wheel_rot > 0:
+                    res = (-wheel_rot * rot_gain, wheel_rot * rot_gain)
+                else:
+                    res = (wheel_rot * rot_gain, -wheel_rot * rot_gain)
+                
+            else:
+                res = (R_dis * forward_gain, L_dis * forward_gain)
+                
+            # set bounds
+            if res[0] > .5:
+                res[0] = .5
+            if res[1] > .5:
+                res[1] = .5
+
+            if res[0] < .001 and res[1] < .001:
+                index += 1
+                    
+            
         else:
             match state:
                 case 0:
-                    if turn_to_goal(ang_to_goal, is_proportional_controller):
-                        state += reach_position(euc_dis, is_proportional_controller)
+                    res = turn_to_goal(ang_to_goal, is_proportional_controller)
+                    if res is None:
+                        res = reach_position(euc_dis, is_proportional_controller)
+                        if res is None:
+                            state += 1
+                            res = (0, 0)
                         
                 case 1:
-                    if turn_to_goal(heading_to_goal_heading, is_proportional_controller):
+                    res = turn_to_goal(heading_to_goal_heading, is_proportional_controller)
+                    if res is None:
+                        res = (0, 0)
                         state = 0
                         index += 1
                     
                 case _:
-                    leftMotor.setVelocity(0)
-                    rightMotor.setVelocity(0)
-        
+                    res = (0, 0)
+                    
+        leftMotor.setVelocity(res[0])
+        rightMotor.setVelocity(res[1])
         
         # exit condition here so that it ends
         if index >= len(waypoints):
