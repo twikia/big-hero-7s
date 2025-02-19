@@ -69,7 +69,7 @@ index = 0
 # our state variables / other random stuff we might need
 state = 0
 is_proportional_controller = True
-is_proportional_feedback_controller_state = False
+is_proportional_feedback_controller_state = True
 elapsed_time = 0 
 
 
@@ -144,7 +144,7 @@ def turn_to_goal(ang_to_goal: float, is_proportional=True) -> tuple:
 
 # Main Control Loop:
 def main():
-    global state, index, gsr
+    global state, index, gsr, elapsed_time
     
     # local vars that don't need to be global:
     pose_x = 0
