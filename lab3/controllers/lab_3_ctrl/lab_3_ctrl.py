@@ -46,19 +46,63 @@ compass.enable(SIM_TIMESTEP)
 
 # TODO: Find waypoints to navigate around the arena while avoiding obstacles
 # x, y, theta stored in array of tuples
-waypoints = [(-0.304705, -.004838, 0),
-             (-0.224705, -0.004838, math.pi/2),
-             (-.194705, .285162, math.pi),
-             (-.304705, .285162,math.pi/2),
+# waypoints = [(-0.304705, -.004838, 0),
+             # (-0.224705, -0.004838, math.pi/2),
+             # (-.194705, .285162, math.pi),
+             # (-.304705, .285162,math.pi/2),
+             # (-0.304705, 0.425162, 0),
+             # (0.125295, 0.425162, - math.pi/4), #  top right corner
+             # (0.345295, 0.265162, - math.pi/2 - math.pi/4),
+             # (.045295, -0.014838, -math.pi/2 + math.pi/4),
+             # (0.325295, -0.244838, -math.pi/2),
+             # (0.325295, -0.414838, math.pi), #  bottom right corner
+             # (-0.304705, -0.414838, math.pi/2),
+             # (-0.304705, -0.194838, math.pi/2)
+             # ]
+             
+# waypoints = [
+             # (-0.304705, -0.194838, 3*math.pi/2)
+             # (-0.304705, -.004838, math.pi),
+             # (-0.224705, -0.004838, (3*math.pi)/2),
+             # (-.194705, .285162, 0),
+             # (-.304705, .285162,(3*math.pi)/2),
+             # (-0.304705, 0.425162, 0),
+             # (0.125295, 0.425162, math.pi), #  top right corner
+             # (0.345295, 0.265162, (3*math.pi)/4),
+             # (.045295, -0.014838, math.pi/4),
+             # (0.325295, -0.244838, (3*math.pi)/4),
+             # (0.325295, -0.414838, math.pi/2), #  bottom right corner
+             # (-0.304705, -0.414838, 0)
+             # ]
+             
+waypoints = [
+             (-0.304705, -0.414838, 0),
+             (0.325295, -0.414838, math.pi/2),
+             (0.325295, -0.244838, (3*math.pi)/4),
+             (.045295, -0.014838, math.pi/4),
+             (0.345295, 0.265162, (3*math.pi)/4),
+             (0.125295, 0.425162, math.pi),
              (-0.304705, 0.425162, 0),
-             (0.125295, 0.425162, - math.pi/4), #  top right corner
-             (0.345295, 0.265162, - math.pi/2 - math.pi/4),
-             (.045295, -0.014838, -math.pi/2 + math.pi/4),
-             (0.325295, -0.244838, -math.pi/2),
-             (0.325295, -0.414838, math.pi), #  bottom right corner
-             (-0.304705, -0.414838, math.pi/2),
-             (-0.304705, -0.194838, math.pi/2)
+             (-.304705, .285162,(3*math.pi)/2),
+             (-.194705, .285162, 0),
+             (-0.224705, -0.004838, (3*math.pi)/2),
+             (-0.304705, -.004838, math.pi),
+             (-0.304705, -0.194838, 3*math.pi/2)
+
+             # (-0.304705, -0.194838, 3*math.pi/2),
+             # (-0.304705, -.004838, math.pi),
+             # (-0.224705, -0.004838, (3*math.pi)/2),
+             # (-.194705, .285162, 0),
+             # (-.304705, .285162,(3*math.pi)/2),
+             # (-0.304705, 0.425162, 0),
+             # (0.125295, 0.425162, math.pi), #  top right corner
+             # (0.345295, 0.265162, (3*math.pi)/4),
+             # (.045295, -0.014838, math.pi/4),
+             # (0.325295, -0.244838, (3*math.pi)/4),
+             # (0.325295, -0.414838, math.pi/2) #  bottom right corner
+             
              ]
+
 # Index indicating which waypoint the robot is reaching next
 index = 0
 
@@ -68,19 +112,22 @@ index = 0
 
 # our state variables / other random stuff we might need
 state = 0
-is_proportional_controller = True
+is_proportional_controller = False
 is_proportional_feedback_controller_state = True
 elapsed_time = 0 
 
 
+# FOR 3.2
 def inverse_wheel_kinematics(distance, delta_theta, delta_time=SIM_TIMESTEP / 1000.0, axle_diameter=EPUCK_AXLE_DIAMETER):
     """takes in the amount to travel then gives the rotations we need"""
     if delta_time == 0: return 0, 0
     
     # reversed the equations we had from last lab 2 for odometry
     v_linear = distance / delta_time  
-    vR = (delta_theta * axle_diameter) / (2 * delta_time) + v_linear
-    vL = v_linear - (delta_theta * axle_diameter) / (2 * delta_time)
+    vR = (v_linear/0.0205) - (axle_diameter*delta_theta)/(2*0.0205)
+    # vR = (delta_theta * axle_diameter) / (2 * delta_time) + v_linear
+    # vL = v_linear - (delta_theta * axle_diameter) / (2 * delta_time)
+    vL = (axle_diameter*delta_theta)/(2*0.0205) + (v_linear/0.0205)
     return vL, vR
 
     
@@ -213,11 +260,11 @@ def main():
         # moving and printing stuff out
         #############################################################
         
-        print("Current pose: [%5f, %5f, %5f]" % (pose_x, pose_y, pose_theta))
-        print("euc distance: ", euc_dis)
-        print("angle_to_goal: ", ang_to_goal)
-        print("heading_to_goal: ", heading_to_goal_heading)
-        print(state)
+        # print("Current pose: [%5f, %5f, %5f]" % (pose_x, pose_y, pose_theta))
+        # print("euc distance: ", euc_dis)
+        # print("angle_to_goal: ", ang_to_goal)
+        # print("heading_to_goal: ", heading_to_goal_heading)
+        # print(state)
         
         
         # perfect code here just wanted more accurate code dunno if that's allowed
@@ -238,31 +285,35 @@ def main():
         if is_proportional_feedback_controller_state:
             
             # tuning vars:
-            forward_err = .01
-            rot_err = .01
-            forward_gain = 5
-            rot_gain = .1
+            forward_err = 1
+            rot_err = 0.01
+            forward_gain = 0.1
+            rot_gain = .5
+           
             
+            L_dis, R_dis = inverse_wheel_kinematics(euc_dis, ang_to_goal)
+            wheel_rot = L_dis - R_dis # right wheel minus left gives positive theta rot
             
-            R_dis, L_dis = inverse_wheel_kinematics(euc_dis, ang_to_goal)
-            wheel_rot = R_dis - L_dis # right wheel minus left gives positive theta rot
-            
-            if not (wheel_rot < rot_err and wheel_rot > -rot_err):
-                if wheel_rot > 0:
-                    res = (-wheel_rot * rot_gain, wheel_rot * rot_gain)
-                else:
-                    res = (wheel_rot * rot_gain, -wheel_rot * rot_gain)
+            print('velocities: ', L_dis, R_dis)
+            if not (abs(wheel_rot) < rot_err):
+                # print('REACHED THE IF STATEMENT')
+                # print('WHEEL ROT: ', wheel_rot)
+             
+                res = (-wheel_rot * rot_gain, wheel_rot * rot_gain)
                 
             else:
-                res = (R_dis * forward_gain, L_dis * forward_gain)
+                # print('REACHED THE ELSE STATEMENT')
+                # print('WHEEL ROT: ', wheel_rot)
+                res = (L_dis * forward_gain, R_dis * forward_gain)
                 
             # set bounds
-            if res[0] > .5:
-                res[0] = .5
-            if res[1] > .5:
-                res[1] = .5
+            if res[0] > 3:
+                res = (3, res[1])
+            if res[1] > 3:
+                res = (res[0], 3)
 
-            if res[0] < .001 and res[1] < .001:
+            if L_dis < forward_err and R_dis < forward_err:
+                print('INCREASING INDEX')
                 index += 1
                     
             
@@ -281,7 +332,7 @@ def main():
                     if res is None:
                         res = (0, 0)
                         state = 0
-                        index += 1
+                        index += 1 #iterating to next waypoint
                     
                 case _:
                     res = (0, 0)
