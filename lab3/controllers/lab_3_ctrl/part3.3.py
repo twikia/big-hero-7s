@@ -39,10 +39,10 @@ vL = 0
 vR = 0
 
 # Initialize gps and compass for odometry - THIS IS DISABLED FOR 3.3
-# gps = robot.getDevice("gps")
-# gps.enable(SIM_TIMESTEP)
-# compass = robot.getDevice("compass")
-# compass.enable(SIM_TIMESTEP)
+gps = robot.getDevice("gps")
+gps.enable(SIM_TIMESTEP)
+compass = robot.getDevice("compass")
+compass.enable(SIM_TIMESTEP)
 
 # TODO: Find waypoints to navigate around the arena while avoiding obstacles
 # x, y, theta stored in array of tuples
@@ -194,9 +194,9 @@ def main():
 
         # DISABLED FOR 3.3
         # Read pose_x, pose_y, pose_theta from gps and compass
-        # pose_x = gps.getValues()[0]
-        # pose_y = gps.getValues()[1]
-        # pose_theta = np.arctan2(compass.getValues()[0], compass.getValues()[1])
+        pose_x = gps.getValues()[0]
+        pose_y = gps.getValues()[1]
+        pose_theta = np.arctan2(compass.getValues()[0], compass.getValues()[1])
         
         # get the times:
         # elapsed_time += SIM_TIMESTEP/1000.0
