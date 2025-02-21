@@ -12,6 +12,7 @@ robot = Supervisor()
 EPUCK_AXLE_DIAMETER = 0.053 # ePuck's wheels are 53mm apart.
 EPUCK_MAX_WHEEL_SPEED = 0.1257 # ePuck wheel speed in m/s
 MAX_SPEED = 6.28
+EPUCK_WHEEL_RADIUS = 0.0205
 
 # get the time step of the current world.
 SIM_TIMESTEP = int(robot.getBasicTimeStep())
@@ -84,8 +85,8 @@ def inverse_wheel_kinematics(distance, delta_theta, delta_time=SIM_TIMESTEP / 10
     
     # reversed the equations we had from last lab 2 for odometry
     v_linear = distance / delta_time  
-    vR = (v_linear/0.0205) - (axle_diameter*delta_theta)/(2*0.0205)
-    vL = (axle_diameter*delta_theta)/(2*0.0205) + (v_linear/0.0205)
+    vR = (v_linear/EPUCK_WHEEL_RADIUS) - (axle_diameter*delta_theta)/(2*EPUCK_WHEEL_RADIUS)
+    vL = (axle_diameter*delta_theta)/(2*EPUCK_WHEEL_RADIUS) + (v_linear/EPUCK_WHEEL_RADIUS)
     return vL, vR
 
 def reach_position(distance_to_goal, is_proportional=True) -> tuple:
