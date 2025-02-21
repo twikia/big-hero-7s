@@ -71,11 +71,10 @@ index = 0
 
 
 # our state variables / other random stuff we might need
-step = 0
-is_proportional_controller = False
-is_proportional_feedback_controller_state = False
-state = 'not proportional'
+
+state = 'proportional'
 elapsed_time = 0 
+step = 0
 
 
 # FOR 3.2
@@ -89,7 +88,7 @@ def inverse_wheel_kinematics(distance, delta_theta, delta_time=SIM_TIMESTEP / 10
     vL = (axle_diameter*delta_theta)/(2*EPUCK_WHEEL_RADIUS) + (v_linear/EPUCK_WHEEL_RADIUS)
     return vL, vR
 
-def reach_position(distance_to_goal, is_proportional=True) -> tuple:
+def reach_position(distance_to_goal) -> tuple:
     """goes foward until the distance is within the error -> ruturns true is it has reached the goal"""
     global leftMotor, rightMotor, leftMax, rightMax
     
@@ -99,9 +98,9 @@ def reach_position(distance_to_goal, is_proportional=True) -> tuple:
     min_foward_speed = .01
     max_foward_speed = .5
     
-    if is_proportional:
-        portional_gain = 5
-        foward_speed = abs(distance_to_goal * portional_gain)
+    
+    portional_gain = 5
+    foward_speed = abs(distance_to_goal * portional_gain)
     
     if foward_speed > max_foward_speed:
         foward_speed = max_foward_speed
@@ -114,21 +113,21 @@ def reach_position(distance_to_goal, is_proportional=True) -> tuple:
 
     return None
 
-def turn_to_goal(ang_to_goal: float, is_proportional=True) -> tuple:
+def turn_to_goal(ang_to_goal: float) -> tuple:
     """ takes in the angle and turns if not facing -> returns true if it is facing the goal otherwise returns false"""
     
     global leftMotor, rightMotor, leftMax, rightMax
     
     # tuning variables r here
     err_margin = .01
-    turn_speed = .2 # default value will change this
+
     min_turn_speed = .01
     max_turn_speed = .25
     portional_gain = .3
-    
+    turn_speed = abs(portional_gain * ang_to_goal)
     # this part does makes it turn faster the further it is
-    if is_proportional:
-        turn_speed = abs(portional_gain * ang_to_goal)
+    
+    
     
     if turn_speed > max_turn_speed:
         turn_speed = max_turn_speed
@@ -190,7 +189,6 @@ def main():
         # calculate the angle to goal
         ang_to_goal = math.atan2(goal_pos[1] - pose_y, goal_pos[0] - pose_x)
         ang_to_goal = (ang_to_goal - pose_theta + math.pi) % (2 * math.pi) - math.pi
-        # heading_to_goal_heading = goal_pos[2] - pose_theta
         heading_to_goal_heading = (goal_pos[2] - pose_theta + math.pi) % (2 * math.pi) - math.pi
 
         if state == 'proportional':
@@ -221,23 +219,23 @@ def main():
                 res = (res[0], 3)
 
             if L_dis < forward_err and R_dis < forward_err:
-                print('INCREASING INDEX')
+                
                 index += 1
                     
             
         else:
-            is_proportional_controller = True
+            
             match step:
                 case 0:
-                    res = turn_to_goal(ang_to_goal, is_proportional_controller)
+                    res = turn_to_goal(ang_to_goal)
                     if res is None:
-                        res = reach_position(euc_dis, is_proportional_controller)
+                        res = reach_position(euc_dis)
                         if res is None:
                             step += 1
                             res = (0, 0)
                         
                 case 1:
-                    res = turn_to_goal(heading_to_goal_heading, is_proportional_controller)
+                    res = turn_to_goal(heading_to_goal_heading)
                     if res is None:
                         res = (0, 0)
                         step = 0
