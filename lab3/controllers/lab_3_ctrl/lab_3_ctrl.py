@@ -46,34 +46,6 @@ compass.enable(SIM_TIMESTEP)
 
 # TODO: Find waypoints to navigate around the arena while avoiding obstacles
 # x, y, theta stored in array of tuples
-# waypoints = [(-0.304705, -.004838, 0),
-             # (-0.224705, -0.004838, math.pi/2),
-             # (-.194705, .285162, math.pi),
-             # (-.304705, .285162,math.pi/2),
-             # (-0.304705, 0.425162, 0),
-             # (0.125295, 0.425162, - math.pi/4), #  top right corner
-             # (0.345295, 0.265162, - math.pi/2 - math.pi/4),
-             # (.045295, -0.014838, -math.pi/2 + math.pi/4),
-             # (0.325295, -0.244838, -math.pi/2),
-             # (0.325295, -0.414838, math.pi), #  bottom right corner
-             # (-0.304705, -0.414838, math.pi/2),
-             # (-0.304705, -0.194838, math.pi/2)
-             # ]
-             
-# waypoints = [
-             # (-0.304705, -0.194838, 3*math.pi/2)
-             # (-0.304705, -.004838, math.pi),
-             # (-0.224705, -0.004838, (3*math.pi)/2),
-             # (-.194705, .285162, 0),
-             # (-.304705, .285162,(3*math.pi)/2),
-             # (-0.304705, 0.425162, 0),
-             # (0.125295, 0.425162, math.pi), #  top right corner
-             # (0.345295, 0.265162, (3*math.pi)/4),
-             # (.045295, -0.014838, math.pi/4),
-             # (0.325295, -0.244838, (3*math.pi)/4),
-             # (0.325295, -0.414838, math.pi/2), #  bottom right corner
-             # (-0.304705, -0.414838, 0)
-             # ]
              
 waypoints = [
              (-0.304705, -0.414838, 0),
@@ -88,19 +60,6 @@ waypoints = [
              (-0.224705, -0.004838, (3*math.pi)/2),
              (-0.304705, -.004838, math.pi),
              (-0.304705, -0.194838, 3*math.pi/2)
-
-             # (-0.304705, -0.194838, 3*math.pi/2),
-             # (-0.304705, -.004838, math.pi),
-             # (-0.224705, -0.004838, (3*math.pi)/2),
-             # (-.194705, .285162, 0),
-             # (-.304705, .285162,(3*math.pi)/2),
-             # (-0.304705, 0.425162, 0),
-             # (0.125295, 0.425162, math.pi), #  top right corner
-             # (0.345295, 0.265162, (3*math.pi)/4),
-             # (.045295, -0.014838, math.pi/4),
-             # (0.325295, -0.244838, (3*math.pi)/4),
-             # (0.325295, -0.414838, math.pi/2) #  bottom right corner
-             
              ]
 
 # Index indicating which waypoint the robot is reaching next
@@ -111,9 +70,10 @@ index = 0
 
 
 # our state variables / other random stuff we might need
-state = 0
+step = 0
 is_proportional_controller = False
-is_proportional_feedback_controller_state = True
+is_proportional_feedback_controller_state = False
+state = 'not proportional'
 elapsed_time = 0 
 
 
@@ -125,12 +85,8 @@ def inverse_wheel_kinematics(distance, delta_theta, delta_time=SIM_TIMESTEP / 10
     # reversed the equations we had from last lab 2 for odometry
     v_linear = distance / delta_time  
     vR = (v_linear/0.0205) - (axle_diameter*delta_theta)/(2*0.0205)
-    # vR = (delta_theta * axle_diameter) / (2 * delta_time) + v_linear
-    # vL = v_linear - (delta_theta * axle_diameter) / (2 * delta_time)
     vL = (axle_diameter*delta_theta)/(2*0.0205) + (v_linear/0.0205)
     return vL, vR
-
-    
 
 def reach_position(distance_to_goal, is_proportional=True) -> tuple:
     """goes foward until the distance is within the error -> ruturns true is it has reached the goal"""
@@ -156,7 +112,6 @@ def reach_position(distance_to_goal, is_proportional=True) -> tuple:
         return (leftMax * foward_speed, rightMax * foward_speed)
 
     return None
-
 
 def turn_to_goal(ang_to_goal: float, is_proportional=True) -> tuple:
     """ takes in the angle and turns if not facing -> returns true if it is facing the goal otherwise returns false"""
@@ -191,7 +146,7 @@ def turn_to_goal(ang_to_goal: float, is_proportional=True) -> tuple:
 
 # Main Control Loop:
 def main():
-    global state, index, gsr, elapsed_time
+    global step, index, gsr, elapsed_time
     
     # local vars that don't need to be global:
     pose_x = 0
@@ -211,24 +166,6 @@ def main():
         # left_sensor = gsr[0] < 700
         # right_sensor = gsr[2] < 700
 
-          
-    
-        # if center_sensor: #go straight
-        #     vL = leftMax
-        #     vR = rightMax
-        
-        # elif left_sensor:#move counterclockwise in place
-        #     vL = -leftMax*0.25
-        #     vR = rightMax*0.25
-        # elif right_sensor:
-        #     vL = leftMax*0.25
-        #     vR = -rightMax*0.25
-        # else:
-        #     vL = -leftMax*0.25
-        #     vR = rightMax*0.25
-        ############################################# end prev code ########################
-        
-        # Set the position of the marker
         # marker.setSFVec3f([waypoints[index][0], waypoints[index][1], 0.01])
 
         # Read pose_x, pose_y, pose_theta from gps and compass
@@ -254,36 +191,9 @@ def main():
         ang_to_goal = (ang_to_goal - pose_theta + math.pi) % (2 * math.pi) - math.pi
         # heading_to_goal_heading = goal_pos[2] - pose_theta
         heading_to_goal_heading = (goal_pos[2] - pose_theta + math.pi) % (2 * math.pi) - math.pi
-        
-        
-        #############################################################
-        # moving and printing stuff out
-        #############################################################
-        
-        # print("Current pose: [%5f, %5f, %5f]" % (pose_x, pose_y, pose_theta))
-        # print("euc distance: ", euc_dis)
-        # print("angle_to_goal: ", ang_to_goal)
-        # print("heading_to_goal: ", heading_to_goal_heading)
-        # print(state)
-        
-        
-        # perfect code here just wanted more accurate code dunno if that's allowed
-        # match state:
-        #     case 0:
-        #         state += turn_to_goal(ang_to_goal, is_proportional_controller)
-        #     case 1:
-        #         state += reach_position(euc_dis, is_proportional_controller)
-        #     case 2:
-        #         state += turn_to_goal(heading_to_goal_heading, is_proportional_controller)
-        #     case _:
-        #         leftMotor.setVelocity(0)
-        #         rightMotor.setVelocity(0)
-        
-        
-        # idk if we need two states but i am just toggling using a bool:
-        # more the robot depending on states
-        if is_proportional_feedback_controller_state:
-            
+
+        if state == 'proportional':
+           
             # tuning vars:
             forward_err = 1
             rot_err = 0.01
@@ -294,7 +204,7 @@ def main():
             L_dis, R_dis = inverse_wheel_kinematics(euc_dis, ang_to_goal)
             wheel_rot = L_dis - R_dis # right wheel minus left gives positive theta rot
             
-            print('velocities: ', L_dis, R_dis)
+            #print('velocities: ', L_dis, R_dis)
             if not (abs(wheel_rot) < rot_err):
                 # print('REACHED THE IF STATEMENT')
                 # print('WHEEL ROT: ', wheel_rot)
@@ -318,20 +228,21 @@ def main():
                     
             
         else:
-            match state:
+            is_proportional_controller = True
+            match step:
                 case 0:
                     res = turn_to_goal(ang_to_goal, is_proportional_controller)
                     if res is None:
                         res = reach_position(euc_dis, is_proportional_controller)
                         if res is None:
-                            state += 1
+                            step += 1
                             res = (0, 0)
                         
                 case 1:
                     res = turn_to_goal(heading_to_goal_heading, is_proportional_controller)
                     if res is None:
                         res = (0, 0)
-                        state = 0
+                        step = 0
                         index += 1 #iterating to next waypoint
                     
                 case _:
