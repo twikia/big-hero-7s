@@ -205,16 +205,13 @@ def main():
             L_dis, R_dis = inverse_wheel_kinematics(euc_dis, ang_to_goal)
             wheel_rot = L_dis - R_dis # right wheel minus left gives positive theta rot
             
-            #print('velocities: ', L_dis, R_dis)
             if not (abs(wheel_rot) < rot_err):
-                # print('REACHED THE IF STATEMENT')
-                # print('WHEEL ROT: ', wheel_rot)
+                
              
                 res = (-wheel_rot * rot_gain, wheel_rot * rot_gain)
                 
             else:
-                # print('REACHED THE ELSE STATEMENT')
-                # print('WHEEL ROT: ', wheel_rot)
+               
                 res = (L_dis * forward_gain, R_dis * forward_gain)
                 
             # set bounds
