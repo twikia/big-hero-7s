@@ -1,10 +1,9 @@
-
-# """csci3302_lab4 controller."""
+"""csci3302_lab4 controller."""
 # Copyright (2025) University of Colorado Boulder
 # CSCI 3302: Introduction to Robotics
 
 # You may need to import some classes of the controller module. Ex:
-#  from controller import Robot, Motor, DistanceSensor
+from controller import Robot, Motor, DistanceSensor
 import math
 import time
 import random
@@ -55,10 +54,10 @@ lidar = robot.getDevice("LDS-01")
 lidar.enable(SIM_TIMESTEP)
 lidar.enablePointCloud()
 
-##### DO NOT MODIFY ANY CODE ABOVE THIS #####
+# ##### DO NOT MODIFY ANY CODE ABOVE THIS #####
 
-##### Part 1: Setup Data structures
-#
+# ##### Part 1: Setup Data structures
+# #
 # Create an empty list for your lidar sensor readings here,
 # as well as an array that contains the angles of each ray 
 # in radians. The total field of view is LIDAR_ANGLE_RANGE,
@@ -68,14 +67,14 @@ lidar.enablePointCloud()
 
 
 
-#### End of Part 1 #####
+# #### End of Part 1 #####
  
 # Main Control Loop:
 while robot.step(SIM_TIMESTEP) != -1:     
     
-    #####################################################
-    #                 Sensing                           #
-    #####################################################
+    # #####################################################
+                    # Sensing                           #
+    # #####################################################
 
     # Read ground sensors
     for i, gs in enumerate(ground_sensors):
@@ -85,8 +84,8 @@ while robot.step(SIM_TIMESTEP) != -1:
     lidar_sensor_readings = lidar.getRangeImage() # rhos
     
     
-    ##### Part 2: Turn world coordinates into map coordinates
-    #
+    # ##### Part 2: Turn world coordinates into map coordinates
+    # #
     # Come up with a way to turn the robot pose (in world coordinates)
     # into coordinates on the map. Draw a red dot using display.drawPixel()
     # where the robot moves.
@@ -94,8 +93,8 @@ while robot.step(SIM_TIMESTEP) != -1:
 
     
     
-    ##### Part 3: Convert Lidar data into world coordinates
-    #
+    # ##### Part 3: Convert Lidar data into world coordinates
+    # #
     # Each Lidar reading has a distance rho and an angle alpha.
     # First compute the corresponding rx and ry of where the lidar
     # hits the object in the robot coordinate system. Then convert
@@ -105,7 +104,7 @@ while robot.step(SIM_TIMESTEP) != -1:
 
     
     
-    ##### Part 4: Draw the obstacle and free space pixels on the map
+    # ##### Part 4: Draw the obstacle and free space pixels on the map
  
     
           
@@ -115,9 +114,9 @@ while robot.step(SIM_TIMESTEP) != -1:
 
     
     # DO NOT CHANGE THE FOLLOWING CODE (You might only add code to display robot poses)
-    #####################################################
-    #                 Robot controller                  #
-    #####################################################
+    # #####################################################
+                    # Robot controller                  #
+    # #####################################################
 
     if state == "line_follower":
             if(gsr[1]<350 and gsr[0]>400 and gsr[2] > 400):
@@ -144,9 +143,9 @@ while robot.step(SIM_TIMESTEP) != -1:
     leftMotor.setVelocity(vL)
     rightMotor.setVelocity(vR)
     
-    #####################################################
-    #                    Odometry                       #
-    #####################################################
+    # #####################################################
+                       # Odometry                       #
+    # #####################################################
     
     EPUCK_MAX_WHEEL_SPEED = 0.11695*SIM_TIMESTEP/1000.0 
     dsr=vR/MAX_SPEED*EPUCK_MAX_WHEEL_SPEED
@@ -158,4 +157,4 @@ while robot.step(SIM_TIMESTEP) != -1:
     pose_theta += (dsr-dsl)/EPUCK_AXLE_DIAMETER
     
     # Feel free to uncomment this for debugging
-    #print("X: %f Y: %f Theta: %f " % (pose_x,pose_y,pose_theta))
+    # #print("X: %f Y: %f Theta: %f " % (pose_x,pose_y,pose_theta))
