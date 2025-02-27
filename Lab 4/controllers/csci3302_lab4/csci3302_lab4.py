@@ -60,7 +60,11 @@ lidar = robot.getDevice("LDS-01")
 lidar.enable(SIM_TIMESTEP)
 lidar.enablePointCloud()
 
-
+def world_to_display(wx, wy):
+        
+        dx = int(wx * 300) 
+        dy = int((wy) * 300)
+        return dx, dy
 # ##### DO NOT MODIFY ANY CODE ABOVE THIS #####
 
 # ##### Part 1: Setup Data structures
@@ -101,18 +105,14 @@ while robot.step(SIM_TIMESTEP) != -1:
     
     # ##### Part 2: Convert World Coordinates to Display Coordinates #####
     
-    def world_to_display(wx, wy):
-        
-        dx = int(wx * 300) 
-        dy = int((1-wy) * 300)
-        return dx, dy
+    
 
     robot_dx, robot_dy = world_to_display(pose_x, pose_y)
     
     # Draw Robot Position
     display.drawPixel(robot_dx, robot_dy)
-    display.setColor(0xFF0000)
-    display.drawLine(150, 150, 300, 300)  
+ 
+    
 
     
     
