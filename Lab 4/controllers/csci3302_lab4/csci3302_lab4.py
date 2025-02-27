@@ -17,6 +17,12 @@ LIDAR_SENSOR_MAX_RANGE = 3 # Meters
 LIDAR_ANGLE_BINS = 21 # 21 Bins to cover the angular range of the lidar, centered at 10
 LIDAR_ANGLE_RANGE = 1.5708 # 90 degrees, 1.5708 radians
 
+delta_theta = LIDAR_ANGLE_RANGE / (LIDAR_ANGLE_BINS - 1)
+
+
+lidar_offsets = np.array([(i - 10) * delta_theta for i in range(LIDAR_ANGLE_BINS)])
+
+
 # These are your pose values that you will update by solving the odometry equations
 pose_x = 0.197
 pose_y = 0.678
@@ -54,6 +60,7 @@ lidar = robot.getDevice("LDS-01")
 lidar.enable(SIM_TIMESTEP)
 lidar.enablePointCloud()
 
+
 # ##### DO NOT MODIFY ANY CODE ABOVE THIS #####
 
 # ##### Part 1: Setup Data structures
@@ -65,7 +72,7 @@ lidar.enablePointCloud()
 # array that contains all the angles is to use linspace from
 # the numpy package.
 
-
+lidar_readings = [0.0] * LIDAR_ANGLE_BINS  
 
 # #### End of Part 1 #####
  
@@ -82,14 +89,30 @@ while robot.step(SIM_TIMESTEP) != -1:
 
     # Read Lidar           
     lidar_sensor_readings = lidar.getRangeImage() # rhos
-    
+    #print(lidar_sensor_readings)
+
     
     # ##### Part 2: Turn world coordinates into map coordinates
     # #
     # Come up with a way to turn the robot pose (in world coordinates)
     # into coordinates on the map. Draw a red dot using display.drawPixel()
     # where the robot moves.
+    display.setColor(0xFF0000)  # Red for robot pose
     
+    # ##### Part 2: Convert World Coordinates to Display Coordinates #####
+    
+    def world_to_display(wx, wy):
+        
+        dx = int(wx * 300) 
+        dy = int((1-wy) * 300)
+        return dx, dy
+
+    robot_dx, robot_dy = world_to_display(pose_x, pose_y)
+    
+    # Draw Robot Position
+    display.drawPixel(robot_dx, robot_dy)
+    display.setColor(0xFF0000)
+    display.drawLine(150, 150, 300, 300)  
 
     
     
@@ -155,6 +178,8 @@ while robot.step(SIM_TIMESTEP) != -1:
     pose_y += ds*math.cos(pose_theta)
     pose_x += ds*math.sin(pose_theta)
     pose_theta += (dsr-dsl)/EPUCK_AXLE_DIAMETER
+ 
+
     
     # Feel free to uncomment this for debugging
     # #print("X: %f Y: %f Theta: %f " % (pose_x,pose_y,pose_theta))
