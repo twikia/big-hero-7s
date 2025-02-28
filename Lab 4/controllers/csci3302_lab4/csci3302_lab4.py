@@ -17,16 +17,12 @@ LIDAR_SENSOR_MAX_RANGE = 3 # Meters
 LIDAR_ANGLE_BINS = 21 # 21 Bins to cover the angular range of the lidar, centered at 10
 LIDAR_ANGLE_RANGE = 1.5708 # 90 degrees, 1.5708 radians
 
-delta_theta = LIDAR_ANGLE_RANGE / (LIDAR_ANGLE_BINS - 1)
-
-
-lidar_offsets = np.array([(i - 10) * delta_theta for i in range(LIDAR_ANGLE_BINS)])
-
 
 # These are your pose values that you will update by solving the odometry equations
 pose_x = 0.197
 pose_y = 0.678
 pose_theta = -np.pi
+
 
 # ePuck Constants
 EPUCK_AXLE_DIAMETER = 0.053 # ePuck's wheels are 53mm apart.
@@ -60,11 +56,7 @@ lidar = robot.getDevice("LDS-01")
 lidar.enable(SIM_TIMESTEP)
 lidar.enablePointCloud()
 
-def world_to_display(wx, wy):
-        
-        dx = int(wx * 300) 
-        dy = int((wy) * 300)
-        return dx, dy
+
 # ##### DO NOT MODIFY ANY CODE ABOVE THIS #####
 
 # ##### Part 1: Setup Data structures
@@ -77,9 +69,50 @@ def world_to_display(wx, wy):
 # the numpy package.
 
 lidar_readings = [0.0] * LIDAR_ANGLE_BINS  
+delta_theta = LIDAR_ANGLE_RANGE / (LIDAR_ANGLE_BINS - 1)
+
+lidar_offsets = np.array([(i - 10) * delta_theta for i in range(LIDAR_ANGLE_BINS)])
 
 # #### End of Part 1 #####
  
+###### use def functions ######
+def world_to_display(wx, wy):
+        try:
+            dx = int(wx * 300) 
+            if dx > 299:
+                dx = 299
+            dy = int((wy) * 300)
+            if dy > 299:
+                dy = 299
+        except:
+            dx = 0
+            dy = 0
+        return dx, dy
+    
+
+def local_to_global(local_x, local_y, robot_x, robot_y, robot_theta):
+
+    # weird code flipped the theta?????????
+    # idk why the odometry is this way but why?
+    global_x = robot_x + local_x * math.sin(robot_theta) + local_y * -math.cos(robot_theta)
+    global_y = robot_y + local_x * math.cos(robot_theta) + local_y * math.sin(robot_theta)
+
+    return global_x, global_y
+
+
+def convert_to_display(local_coords):
+    lidar_to_gloabl = []
+    
+    for indx in range(21):
+        dis = lidar_sensor_readings[indx]
+        angle = lidar_offsets[indx]
+        coord = (dis * math.cos(angle), dis * math.sin(angle))
+        res = local_to_global(coord[0], coord[1], pose_x, pose_y, pose_theta) # too global coords
+        res = world_to_display(res[0], res[1]) # from global to display coords
+        lidar_to_gloabl.append(res)
+    return lidar_to_gloabl
+    
+        
 # Main Control Loop:
 while robot.step(SIM_TIMESTEP) != -1:     
     
@@ -93,7 +126,7 @@ while robot.step(SIM_TIMESTEP) != -1:
 
     # Read Lidar           
     lidar_sensor_readings = lidar.getRangeImage() # rhos
-    #print(lidar_sensor_readings)
+    # print(lidar_sensor_readings)
 
     
     # ##### Part 2: Turn world coordinates into map coordinates
@@ -102,19 +135,10 @@ while robot.step(SIM_TIMESTEP) != -1:
     # into coordinates on the map. Draw a red dot using display.drawPixel()
     # where the robot moves.
     display.setColor(0xFF0000)  # Red for robot pose
-    
     # ##### Part 2: Convert World Coordinates to Display Coordinates #####
-    
-    
-
     robot_dx, robot_dy = world_to_display(pose_x, pose_y)
-    
     # Draw Robot Position
     display.drawPixel(robot_dx, robot_dy)
- 
-    
-
-    
     
     # ##### Part 3: Convert Lidar data into world coordinates
     # #
@@ -124,17 +148,24 @@ while robot.step(SIM_TIMESTEP) != -1:
     # rx and ry into world coordinates wx and wy. 
     # The arena is 1x1m2 and its origin is in the top left of the arena. 
     
-
     
+    globals_coords = convert_to_display(lidar_sensor_readings)
     
     # ##### Part 4: Draw the obstacle and free space pixels on the map
- 
+    display.setColor(0xFFFFFF)
+    for coor in globals_coords:
+        display.drawLine(robot_dx, robot_dy, coor[0], coor[1])
+        
+        
+    display.setColor(0x0000FF)
+    for coor in globals_coords:
+        display.drawPixel(coor[0], coor[1])
     
-          
-
-    
- 
-
+    display.setColor(0xFF0000)  # Red for robot pose
+    # ##### Part 2: Convert World Coordinates to Display Coordinates #####
+    robot_dx, robot_dy = world_to_display(pose_x, pose_y)
+    # Draw Robot Position
+    display.drawPixel(robot_dx, robot_dy)
     
     # DO NOT CHANGE THE FOLLOWING CODE (You might only add code to display robot poses)
     # #####################################################
@@ -175,9 +206,10 @@ while robot.step(SIM_TIMESTEP) != -1:
     dsl=vL/MAX_SPEED*EPUCK_MAX_WHEEL_SPEED
     ds=(dsr+dsl)/2.0
     
+    pose_theta += (dsr-dsl)/EPUCK_AXLE_DIAMETER
     pose_y += ds*math.cos(pose_theta)
     pose_x += ds*math.sin(pose_theta)
-    pose_theta += (dsr-dsl)/EPUCK_AXLE_DIAMETER
+    
  
 
     
