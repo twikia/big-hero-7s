@@ -91,9 +91,6 @@ def world_to_display(wx, wy):
     
 
 def local_to_global(local_x, local_y, robot_x, robot_y, robot_theta):
-
-    # weird code flipped the theta?????????
-    # idk why the odometry is this way but why?
     global_x = robot_x + local_x * math.sin(robot_theta) + local_y * -math.cos(robot_theta)
     global_y = robot_y + local_x * math.cos(robot_theta) + local_y * math.sin(robot_theta)
 
