@@ -12,7 +12,6 @@ robot = Supervisor()
 EPUCK_AXLE_DIAMETER = 0.053 # ePuck's wheels are 53mm apart.
 EPUCK_MAX_WHEEL_SPEED = 0.1257 # ePuck wheel speed in m/s
 MAX_SPEED = 6.28
-EPUCK_WHEEL_RADIUS = 0.0205
 
 # get the time step of the current world.
 SIM_TIMESTEP = int(robot.getBasicTimeStep())
@@ -39,7 +38,7 @@ for i in range(10): robot.step(SIM_TIMESTEP)
 vL = 0
 vR = 0
 
-# Initialize gps and compass for odometry
+# Initialize gps and compass for odometry - THIS IS DISABLED FOR 3.3
 gps = robot.getDevice("gps")
 gps.enable(SIM_TIMESTEP)
 compass = robot.getDevice("compass")
@@ -60,7 +59,7 @@ waypoints = [
              (-.194705, .285162, 0),
              (-0.224705, -0.004838, (3*math.pi)/2),
              (-0.304705, -.004838, math.pi),
-             (-0.304705, -0.194838, 3*math.pi/2)
+             (-0.304705, -0.194838, 3*math.pi/2)       
              ]
 
 # Index indicating which waypoint the robot is reaching next
@@ -71,10 +70,10 @@ index = 0
 
 
 # our state variables / other random stuff we might need
-
-state = 'proportional'
+state = 0
+is_proportional_controller = False
+is_proportional_feedback_controller_state = True
 elapsed_time = 0 
-step = 0
 
 
 # FOR 3.2
@@ -84,11 +83,15 @@ def inverse_wheel_kinematics(distance, delta_theta, delta_time=SIM_TIMESTEP / 10
     
     # reversed the equations we had from last lab 2 for odometry
     v_linear = distance / delta_time  
-    vR = (v_linear/EPUCK_WHEEL_RADIUS) - (axle_diameter*delta_theta)/(2*EPUCK_WHEEL_RADIUS)
-    vL = (axle_diameter*delta_theta)/(2*EPUCK_WHEEL_RADIUS) + (v_linear/EPUCK_WHEEL_RADIUS)
+    vR = (v_linear/0.0205) - (axle_diameter*delta_theta)/(2*0.0205)
+    # vR = (delta_theta * axle_diameter) / (2 * delta_time) + v_linear
+    # vL = v_linear - (delta_theta * axle_diameter) / (2 * delta_time)
+    vL = (axle_diameter*delta_theta)/(2*0.0205) + (v_linear/0.0205)
     return vL, vR
 
-def reach_position(distance_to_goal) -> tuple:
+    
+
+def reach_position(distance_to_goal, is_proportional=True) -> tuple:
     """goes foward until the distance is within the error -> ruturns true is it has reached the goal"""
     global leftMotor, rightMotor, leftMax, rightMax
     
@@ -98,9 +101,9 @@ def reach_position(distance_to_goal) -> tuple:
     min_foward_speed = .01
     max_foward_speed = .5
     
-    
-    portional_gain = 5
-    foward_speed = abs(distance_to_goal * portional_gain)
+    if is_proportional:
+        portional_gain = 5
+        foward_speed = abs(distance_to_goal * portional_gain)
     
     if foward_speed > max_foward_speed:
         foward_speed = max_foward_speed
@@ -113,21 +116,22 @@ def reach_position(distance_to_goal) -> tuple:
 
     return None
 
-def turn_to_goal(ang_to_goal: float) -> tuple:
+
+def turn_to_goal(ang_to_goal: float, is_proportional=True) -> tuple:
     """ takes in the angle and turns if not facing -> returns true if it is facing the goal otherwise returns false"""
     
     global leftMotor, rightMotor, leftMax, rightMax
     
     # tuning variables r here
     err_margin = .01
-
+    turn_speed = .2 # default value will change this
     min_turn_speed = .01
     max_turn_speed = .25
     portional_gain = .3
-    turn_speed = abs(portional_gain * ang_to_goal)
+    
     # this part does makes it turn faster the further it is
-    
-    
+    if is_proportional:
+        turn_speed = abs(portional_gain * ang_to_goal)
     
     if turn_speed > max_turn_speed:
         turn_speed = max_turn_speed
@@ -146,12 +150,14 @@ def turn_to_goal(ang_to_goal: float) -> tuple:
 
 # Main Control Loop:
 def main():
-    global step, index, gsr, elapsed_time
+    global state, index, gsr, elapsed_time
     
     # local vars that don't need to be global:
     pose_x = 0
     pose_y = 0
     pose_theta = 0
+    
+    prev_elapsed_time = 0
     
     
     while robot.step(SIM_TIMESTEP) != -1:
@@ -159,23 +165,42 @@ def main():
         #########################################################
         # Previous code for line following, for testing
         #########################################################
-        # for i, gs in enumerate(ground_sensors):
-        #     gsr[i] = gs.getValue()
+        for i, gs in enumerate(ground_sensors):
+            gsr[i] = gs.getValue()
             
-        # center_sensor = gsr[1] < 700
-        # left_sensor = gsr[0] < 700
-        # right_sensor = gsr[2] < 700
+        center_sensor = gsr[1] < 700
+        left_sensor = gsr[0] < 700
+        right_sensor = gsr[2] < 700
 
+          
+    
+        # if center_sensor: #go straight
+            # vL = leftMax
+            # vR = rightMax
+        
+        # elif left_sensor:#move counterclockwise in place
+            # vL = -leftMax*0.25
+            # vR = rightMax*0.25
+        # elif right_sensor:
+            # vL = leftMax*0.25
+            # vR = -rightMax*0.25
+        # else:
+            # vL = -leftMax*0.25
+            # vR = rightMax*0.25
+        ############################################# end prev code ########################
+        
+        # Set the position of the marker
         # marker.setSFVec3f([waypoints[index][0], waypoints[index][1], 0.01])
 
+        # DISABLED FOR 3.3
         # Read pose_x, pose_y, pose_theta from gps and compass
         pose_x = gps.getValues()[0]
         pose_y = gps.getValues()[1]
         pose_theta = np.arctan2(compass.getValues()[0], compass.getValues()[1])
         
         # get the times:
-        elapsed_time += SIM_TIMESTEP / 1000.0
-        delta_time = SIM_TIMESTEP / 1000.0
+        # elapsed_time += SIM_TIMESTEP/1000.0
+        # delta_time = elapsed_time-prev_elapsed_time
         
         # TODO: controller / calculations
         
@@ -189,10 +214,38 @@ def main():
         # calculate the angle to goal
         ang_to_goal = math.atan2(goal_pos[1] - pose_y, goal_pos[0] - pose_x)
         ang_to_goal = (ang_to_goal - pose_theta + math.pi) % (2 * math.pi) - math.pi
+        # heading_to_goal_heading = goal_pos[2] - pose_theta
         heading_to_goal_heading = (goal_pos[2] - pose_theta + math.pi) % (2 * math.pi) - math.pi
-
-        if state == 'proportional':
-           
+        
+        
+        #############################################################
+        # moving and printing stuff out
+        #############################################################
+        
+        # print("Current pose: [%5f, %5f, %5f]" % (pose_x, pose_y, pose_theta))
+        # print("euc distance: ", euc_dis)
+        # print("angle_to_goal: ", ang_to_goal)
+        # print("heading_to_goal: ", heading_to_goal_heading)
+        # print(state)
+        
+        
+        # perfect code here just wanted more accurate code dunno if that's allowed
+        # match state:
+        #     case 0:
+        #         state += turn_to_goal(ang_to_goal, is_proportional_controller)
+        #     case 1:
+        #         state += reach_position(euc_dis, is_proportional_controller)
+        #     case 2:
+        #         state += turn_to_goal(heading_to_goal_heading, is_proportional_controller)
+        #     case _:
+        #         leftMotor.setVelocity(0)
+        #         rightMotor.setVelocity(0)
+        
+        
+        # idk if we need two states but i am just toggling using a bool:
+        # more the robot depending on states
+        if is_proportional_feedback_controller_state:
+            
             # tuning vars:
             forward_err = 1
             rot_err = 0.01
@@ -203,13 +256,16 @@ def main():
             L_dis, R_dis = inverse_wheel_kinematics(euc_dis, ang_to_goal)
             wheel_rot = L_dis - R_dis # right wheel minus left gives positive theta rot
             
+            print('velocities: ', L_dis, R_dis)
             if not (abs(wheel_rot) < rot_err):
-                
+                # print('REACHED THE IF STATEMENT')
+                # print('WHEEL ROT: ', wheel_rot)
              
                 res = (-wheel_rot * rot_gain, wheel_rot * rot_gain)
                 
             else:
-               
+                # print('REACHED THE ELSE STATEMENT')
+                # print('WHEEL ROT: ', wheel_rot)
                 res = (L_dis * forward_gain, R_dis * forward_gain)
                 
             # set bounds
@@ -219,30 +275,46 @@ def main():
                 res = (res[0], 3)
 
             if L_dis < forward_err and R_dis < forward_err:
-                
+                print('INCREASING INDEX')
                 index += 1
                     
             
         else:
-            
-            match step:
+            match state:
                 case 0:
-                    res = turn_to_goal(ang_to_goal)
+                    res = turn_to_goal(ang_to_goal, is_proportional_controller)
                     if res is None:
-                        res = reach_position(euc_dis)
+                        res = reach_position(euc_dis, is_proportional_controller)
                         if res is None:
-                            step += 1
+                            state += 1
                             res = (0, 0)
                         
                 case 1:
-                    res = turn_to_goal(heading_to_goal_heading)
+                    res = turn_to_goal(heading_to_goal_heading, is_proportional_controller)
                     if res is None:
                         res = (0, 0)
-                        step = 0
+                        state = 0
                         index += 1 #iterating to next waypoint
                     
                 case _:
                     res = (0, 0)
+        
+        
+        elapsed_time += SIM_TIMESTEP / 1000.0
+        delta_time = SIM_TIMESTEP / 1000.0
+        
+        right_normalized_speed = (res[1]/MAX_SPEED)*EPUCK_MAX_WHEEL_SPEED
+        left_normalized_speed = (res[0]/MAX_SPEED)*EPUCK_MAX_WHEEL_SPEED
+    
+        pose_theta += ((right_normalized_speed - left_normalized_speed)/EPUCK_AXLE_DIAMETER) * delta_time
+        
+        prev_elapsed_time = elapsed_time
+        
+        pose_x += math.cos(pose_theta)*((left_normalized_speed + right_normalized_speed)/2) * delta_time
+        
+        pose_y += math.sin(pose_theta)*((left_normalized_speed + right_normalized_speed)/2) * delta_time
+        
+        print('x: ', pose_x, 'y: ', pose_y, 'theta: ', pose_theta)
                     
         leftMotor.setVelocity(res[0])
         rightMotor.setVelocity(res[1])
