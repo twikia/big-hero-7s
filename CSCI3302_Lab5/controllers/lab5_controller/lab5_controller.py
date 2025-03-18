@@ -4,6 +4,7 @@ import math
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import convolve2d # Uncomment if you want to use something else for finding the configuration space
+import matplotlib.transforms as transforms
 
 MAX_SPEED = 7.0  # [rad/s]
 MAX_SPEED_MS = 0.633 # [m/s]
@@ -82,8 +83,8 @@ lidar_offsets = lidar_offsets[83:len(lidar_offsets)-83] # Only keep lidar readin
 
 ##################### IMPORTANT #####################
 # Set the mode here. Please change to 'autonomous' before submission
-mode = 'manual' # Part 1.1: manual mode
-# mode = 'planner'
+# mode = 'manual' # Part 1.1: manual mode
+mode = 'planner'
 # mode = 'autonomous'
 # mode = 'picknplace'
 
@@ -114,13 +115,25 @@ if mode == 'planner':
         pass
 
     # Part 2.1: Load map (map.npy) from disk and visualize it
-
+    filtered_map = np.load("../../maps/mapv1.npy")
+    plt.imshow(filtered_map, cmap='gray', origin="lower")
+    # plt.imshow(np.fliplr(filtered_map), cmap='gray', origin="upper")
+    # plt.xticks(rotation=90)
+    # plt.yticks(rotation=90)
+    
+    # plt.show()
+    
 
     # Part 2.2: Compute an approximation of the “configuration space”
-
-
+    # Convolve the map with a quadratic kernel of ones to approximate the configuration space
+    kernel = np.ones((10, 10))  # Define a 3x3 kernel of ones
+    map = convolve2d(filtered_map, kernel, mode='same', boundary='wrap')  # Convolve the map with the kernel
+    map = map > 0  # Convert the convolved map to binary, where 1 represents an obstacle or its configuration space
+    plt.imshow(map, cmap='gray', origin="lower")
+    plt.show()
+    
     # Part 2.3 continuation: Call path_planner
-
+    
 
     # Part 2.4: Turn paths into waypoints and save on disk as path.npy and visualize it
     waypoints = []
@@ -134,7 +147,8 @@ if mode == 'planner':
 # Part 1.2: Map Initialization
 
 # Initialize your map data structure here as a 2D floating point array
-map = np.zeros(shape=[360,360])
+map_data = np.zeros(shape=[360,360])
+
 waypoints = []
 
 if mode == 'autonomous':
@@ -171,7 +185,7 @@ while robot.step(timestep) != -1 and mode != 'planner':
     lidar_sensor_readings = lidar.getRangeImage()
     lidar_sensor_readings = lidar_sensor_readings[83:len(lidar_sensor_readings)-83]
     
-    print(lidar_sensor_readings)
+    # print(lidar_sensor_readings)
     for i, rho in enumerate(lidar_sensor_readings):
         alpha = lidar_offsets[i]
 
@@ -198,13 +212,21 @@ while robot.step(timestep) != -1 and mode != 'planner':
             wy = 11.999
         if rho < LIDAR_SENSOR_MAX_RANGE:
             # Part 1.3: visualize map gray values.
- 
-            # You will eventually REPLACE the following lines with a more robust version of the map
-            # with a grayscale drawing containing more levels than just 0 and 1.
-            display.setColor(int(0X0000FF))
-            # display.setColor((map[360-abs(int(wx*30))][abs(int(wy*30))]*256**2+map[360-abs(int(wx*30))][abs(int(wy*30))]*256+map[360-abs(int(wx*30))][abs(int(wy*30))])*255)
-            display.drawPixel(360-abs(int(wx*30)),abs(int(wy*30)))
             
+            #try catch for bounds just in case
+            try:
+                grey_val = min(map_data[359-abs(int(wx*30))][abs(int(wy*30))] + .005, 1.0)
+                map_data[359-abs(int(wx*30))][abs(int(wy*30))] = grey_val
+                # You will eventually REPLACE the following lines with a more robust version of the map
+                # with a grayscale drawing containing more levels than just 0 and 1.
+                
+                color = (grey_val*256**2+grey_val*256+grey_val)*255
+                display.setColor(int(color))
+                # display.setColor((map[360-abs(int(wx*30))][abs(int(wy*30))]*256**2+map[360-abs(int(wx*30))][abs(int(wy*30))]*256+map[360-abs(int(wx*30))][abs(int(wy*30))])*255)
+                display.drawPixel(360-abs(int(wx*30)),abs(int(wy*30)))
+            except:
+                pass
+                
             # print((360-abs(int(wx*30)),abs(int(wy*30))))
             # print(map[360-abs(int(wx*30))][abs(int(wy*30))]) 
             
@@ -238,13 +260,16 @@ while robot.step(timestep) != -1 and mode != 'planner':
             vR = 0
         elif key == ord('S'):
             # Part 1.4: Filter map and save to filesystem
-            map = [[]]
-            map = [[(x + 5e-3) - 1 if x != 0 else 0 for x in row] for row in map]
-
+            filtered_map = np.where(map_data > .8, 1, 0)
+            # print(filtered_map.shape)
+            np.save("../../maps/mapv2.npy", filtered_map)
+            np.save("../../maps/maprawv2.npy", map_data)
             print("Map file saved")
         elif key == ord('L'):
             # You will not use this portion in Part 1 but here's an example for loading saved a numpy array
-            map = np.load("map.npy")
+            filtered_map = np.load("../../maps/mapv1.npy")
+            filtered_map = np.load("../../maps/maprawv1.npy")
+            print(filtered_map)
             print("Map loaded")
         else: # slow down
             vL *= 0.75
