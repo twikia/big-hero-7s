@@ -184,12 +184,8 @@ while robot.step(timestep) != -1 and mode != 'planner':
 
     lidar_sensor_readings = lidar.getRangeImage()
     lidar_sensor_readings = lidar_sensor_readings[83:len(lidar_sensor_readings)-83]
-<<<<<<< Updated upstream
     
     # print(lidar_sensor_readings)
-=======
-
->>>>>>> Stashed changes
     for i, rho in enumerate(lidar_sensor_readings):
         alpha = lidar_offsets[i]
 
@@ -204,6 +200,8 @@ while robot.step(timestep) != -1 and mode != 'planner':
         # Convert detection from robot coordinates into world coordinates
         wx =  math.cos(t)*rx - math.sin(t)*ry + pose_x
         wy =  math.sin(t)*rx + math.cos(t)*ry + pose_y
+        
+        # print(rx, ry)÷s
 
         ################ ^ [End] Do not modify ^ ##################
 
@@ -214,7 +212,6 @@ while robot.step(timestep) != -1 and mode != 'planner':
             wy = 11.999
         if rho < LIDAR_SENSOR_MAX_RANGE:
             # Part 1.3: visualize map gray values.
-<<<<<<< Updated upstream
             
             #try catch for bounds just in case
             try:
@@ -233,13 +230,6 @@ while robot.step(timestep) != -1 and mode != 'planner':
             # print((360-abs(int(wx*30)),abs(int(wy*30))))
             # print(map[360-abs(int(wx*30))][abs(int(wy*30))]) 
             
-=======
- 
-            # You will eventually REPLACE the following lines with a more robust version of the map
-            # with a grayscale drawing containing more levels than just 0 and 1.
-            display.setColor(int(0X0000FF))
-            display.drawPixel(360-abs(int(wx*30)),abs(int(wy*30)))
->>>>>>> Stashed changes
 
     # Draw the robot's current pose on the 360x360 display
     display.setColor(int(0xFF0000))
@@ -270,14 +260,10 @@ while robot.step(timestep) != -1 and mode != 'planner':
             vR = 0
         elif key == ord('S'):
             # Part 1.4: Filter map and save to filesystem
-<<<<<<< Updated upstream
             filtered_map = np.where(map_data > .8, 1, 0)
             # print(filtered_map.shape)
             np.save("../../maps/mapv2.npy", filtered_map)
             np.save("../../maps/maprawv2.npy", map_data)
-=======
-            
->>>>>>> Stashed changes
             print("Map file saved")
         elif key == ord('L'):
             # You will not use this portion in Part 1 but here's an example for loading saved a numpy array
