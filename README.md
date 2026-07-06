@@ -1,2 +1,2 @@
 # big-hero-7s
-stuff
+Full lidar mapping robot with servo arms. Integrating many sensors and build in webots playground.
